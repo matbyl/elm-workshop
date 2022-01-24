@@ -4,12 +4,12 @@ import Url.Parser as Parser
 import Url exposing (Url)
 
 
-type Route = Home | MyNewPage
+type Route = Home | Pokedex
 
 parser : Parser (Route -> a) a
 parser = Parser.oneOf [
         Parser.map Home Parser.top
-        , Parser.map MyNewPage <| Parser.s "my-new-page"
+        , Parser.map Pokedex <| Parser.s "pokedex"
     ]
 
 fromUrl : Url -> Maybe Route
@@ -20,5 +20,5 @@ toString route = case route of
     Home ->
      "#/"
 
-    MyNewPage ->
-     "#/my-new-page"
+    Pokedex ->
+     "#/pokedex"

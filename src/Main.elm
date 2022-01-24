@@ -2,15 +2,15 @@ module Main exposing (main)
 
 import Browser exposing (Document)
 import Browser.Navigation
-import Html exposing (Html, button, div, text)
-import Html.Attributes exposing (default)
+import Html exposing (Html, a, button, div, text)
+import Html.Attributes exposing (default, href)
 import Html.Events exposing (onClick)
 import Json.Encode as JE
+import Page exposing (Page)
+import Page.Pokedex as Pokedex
 import Route exposing (Route(..))
 import Session exposing (Session)
 import Url exposing (Url)
-import Html.Attributes exposing (href)
-import Html exposing (a)
 
 
 main : Program JE.Value Model Msg
@@ -26,17 +26,15 @@ main =
 
 
 type Msg
-    = GotHomeMsg HomeMsg
+    = GotHomeMsg
+    | GotPokedexMsg Pokedex.Msg
     | OnUrlChange Url.Url
     | OnUrlRequest Browser.UrlRequest
 
 
-type HomeMsg = Increment
-    | Decrement
-
 type Model
     = Home { session : Session, counter : Int }
-    | MyNewPage { session : Session}
+    | Pokedex Pokedex.Model
 
 
 defaultModel : Browser.Navigation.Key -> Model
@@ -48,37 +46,36 @@ init : JE.Value -> Url -> Browser.Navigation.Key -> ( Model, Cmd Msg )
 init _ _ navKey =
     ( defaultModel navKey, Cmd.none )
 
+
 toSession : Model -> Session
-toSession model = case model of
-            Home {session } ->
-                session
-            MyNewPage {session} ->
-                session
+toSession model =
+    case model of
+        Home { session } ->
+            session
+
+        Pokedex { session } ->
+            session
+
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     let
-        session = toSession model
+        session =
+            toSession model
     in
-    case (model, msg) of
-        (Home homeModel, GotHomeMsg subMsg) ->
-            case subMsg of
-                Increment ->
-                    ( Home { homeModel | counter = homeModel.counter + 1 }, Cmd.none )
-
-                Decrement ->
-                    ( Home { homeModel | counter = homeModel.counter - 1 }, Cmd.none )
-        (_, OnUrlChange url) ->
+    case ( msg, model ) of
+        ( OnUrlChange url, _ ) ->
             case Route.fromUrl url of
                 Just Route.Home ->
                     ( defaultModel session.navKey, Cmd.none )
 
-                Just Route.MyNewPage ->
-                    ( MyNewPage { session = session}, Cmd.none )
-                Nothing ->
-                    ( model, Cmd.none)
+                Just Route.Pokedex ->
+                    Pokedex.init session |> updateWith Pokedex GotPokedexMsg
 
-        (_, OnUrlRequest urlRequest) ->
+                Nothing ->
+                    ( model, Cmd.none )
+
+        ( OnUrlRequest urlRequest, _ ) ->
             case urlRequest of
                 Browser.Internal url ->
                     url.fragment
@@ -88,22 +85,32 @@ update msg model =
                 Browser.External url ->
                     ( model, Browser.Navigation.load url )
 
-        (_, _) ->
-            (model, Cmd.none)
+        ( GotHomeMsg, Home _ ) ->
+            ( model, Cmd.none )
+
+        ( GotPokedexMsg subMsg, Pokedex subModel ) ->
+            Pokedex.update subMsg subModel |> updateWith Pokedex GotPokedexMsg
+
+        _ ->
+            ( model, Cmd.none )
+
+
+updateWith : (subModel -> Model) -> (subMsg -> Msg) -> ( subModel, Cmd subMsg ) -> ( Model, Cmd Msg )
+updateWith toModel toCmd ( subModel, subMsg ) =
+    ( toModel subModel, Cmd.map toCmd subMsg )
+
 
 view : Model -> Document Msg
 view model =
-    { title = "My applications"
-    , body =
-        [ case model of
-            Home homeModel ->
-                div []
-                    [ button [ onClick <| GotHomeMsg Decrement ] [ text "-" ]
-                    , text <| "Clicked " ++ String.fromInt homeModel.counter
-                    , button [ onClick <| GotHomeMsg Increment ] [ text "+" ]
-                    , a [ href <| Route.toString Route.MyNewPage] [ text "Go to my new page"]
-                    ]
-            MyNewPage sessino ->
-                div [] [ text "my new page"]
-        ]
-    }
+    case model of
+        Home _ ->
+            Page.view <|
+                { title = "Home"
+                , content =
+                    div []
+                        [ a [ href <| Route.toString Route.Pokedex ] [ text "Go Pokedex" ]
+                        ]
+                }
+
+        Pokedex pokedexModel ->
+            Page.view <| Page.map GotPokedexMsg <| Pokedex.view pokedexModel
