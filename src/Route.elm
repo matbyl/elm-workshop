@@ -4,11 +4,12 @@ import Url.Parser as Parser
 import Url exposing (Url)
 
 
-type Route = Root | MyNewPage
+type Route = Home | MyNewPage
 
 parser : Parser (Route -> a) a
 parser = Parser.oneOf [
-        Parser.map Root Parser.top
+        Parser.map Home Parser.top
+        , Parser.map MyNewPage <| Parser.s "my-new-page"
     ]
 
 fromUrl : Url -> Maybe Route
@@ -16,7 +17,7 @@ fromUrl url = Parser.parse parser { url | path = Maybe.withDefault "" url.fragme
 
 toString : Route -> String
 toString route = case route of
-    Root ->
+    Home ->
      "#/"
 
     MyNewPage ->
