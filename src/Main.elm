@@ -5,8 +5,8 @@ import Browser.Navigation
 import Html exposing (Html, button, div, text)
 import Html.Events exposing (onClick)
 import Json.Encode as JE
-import Url exposing (Url)
 import Session exposing (Session)
+import Url exposing (Url)
 
 
 main : Program JE.Value Model Msg
@@ -34,21 +34,21 @@ type alias Model =
 
 init : JE.Value -> Url -> Browser.Navigation.Key -> ( Model, Cmd Msg )
 init _ _ navKey =
-    ( { session = { navKey = navKey}, counter = 0}, Cmd.none )
+    ( { session = { navKey = navKey }, counter = 0 }, Cmd.none )
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
         Increment ->
-            ( { model | counter = model.counter + 1}, Cmd.none )
+            ( { model | counter = model.counter + 1 }, Cmd.none )
 
         Decrement ->
-            ( { model | counter = model.counter - 1}, Cmd.none )
+            ( { model | counter = model.counter - 1 }, Cmd.none )
 
         OnUrlChange _ ->
             ( model, Cmd.none )
-        
+
         OnUrlRequest _ ->
             ( model, Cmd.none )
 
