@@ -1,43 +1,65 @@
 module Main exposing (main)
 
-import Browser
+import Browser exposing (Document)
+import Browser.Navigation
 import Html exposing (Html, button, div, text)
 import Html.Events exposing (onClick)
+import Json.Encode as JE
+import Url exposing (Url)
 
 
-main : Program () Model Msg
+main : Program JE.Value Model Msg
 main =
-    Browser.sandbox
+    Browser.application
         { init = init
         , view = view
         , update = update
+        , subscriptions = always Sub.none
+        , onUrlChange = OnUrlChange
+        , onUrlRequest = OnUrlRequest
         }
 
 
 type Msg
     = Increment
     | Decrement
+    | OnUrlChange Url.Url
+    | OnUrlRequest Browser.UrlRequest
 
 
-type alias Model = Int
+type alias Model =
+    Int
 
 
-init : Model
-init = 0
+init : JE.Value -> Url -> Browser.Navigation.Key -> ( Model, Cmd Msg )
+init _ _ _ =
+    ( 0, Cmd.none )
 
 
-update : Msg -> Model -> Model
-update msg model = case msg of
-    Increment ->
-        model + 1
-    Decrement ->
-        model - 1
+update : Msg -> Model -> ( Model, Cmd Msg )
+update msg model =
+    case msg of
+        Increment ->
+            ( model + 1, Cmd.none )
+
+        Decrement ->
+            ( model - 1, Cmd.none )
+
+        OnUrlChange _ ->
+            ( model, Cmd.none )
+        
+        OnUrlRequest _ ->
+            ( model, Cmd.none )
 
 
-
-view : Model -> Html Msg
-view model = div [] [
-        button [ onClick Decrement ] [ text "-"]
-        , text <| "Clicked " ++ String.fromInt model
-        , button [ onClick Increment ] [text "+"]
-    ]
+view : Model -> Document Msg
+view model =
+    { title = "My applications"
+    , body =
+        [ div []
+            [ button [ onClick Decrement ] [ text "-" ]
+            , text <| "Clicked " ++ String.fromInt model
+            , button [ onClick Increment ] [ text "+" ]
+            ]
+        ]
+    }
