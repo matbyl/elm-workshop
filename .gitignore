@@ -1,0 +1,45 @@
+lines (82 sloc) 1.86 KB
+
+### Node template
+# Logs
+logs
+*.log
+npm-debug.log*
+
+# Runtime data
+pids
+*.pid
+*.seed
+
+# Compiled binary addons (http://nodejs.org/api/addons.html)
+build/Release
+
+# Dependency directories
+node_modules
+
+# Optional npm cache directory
+.npm
+
+### Elm template
+# elm-package generated files
+elm-stuff
+# elm-repl generated files
+repl-temp-*
+
+#vscode
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+!.vscode/*.code-snippets
+
+# Local History for Visual Studio Code
+.history/
+
+# Built Visual Studio Code Extensions
+*.vsix
+
+.parcel-cache/*
+
+dist/*

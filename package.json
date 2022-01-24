@@ -1,0 +1,7 @@
+{
+  "devDependencies": {
+    "@parcel/transformer-elm": "^2.2.1",
+    "elm": "^0.19.1-5",
+    "parcel": "^2.2.1"
+  }
+}
