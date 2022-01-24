@@ -47,7 +47,7 @@ update msg model =
 
         OnUrlChange _ ->
             ( model, Cmd.none )
-        
+
         OnUrlRequest _ ->
             ( model, Cmd.none )
 
