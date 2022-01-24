@@ -19,25 +19,29 @@ type Msg
     | Decrement
 
 
-type alias Model = Int
+type alias Model =
+    Int
 
 
 init : Model
-init = 0
+init =
+    0
 
 
 update : Msg -> Model -> Model
-update msg model = case msg of
-    Increment ->
-        model + 1
-    Decrement ->
-        model - 1
+update msg model =
+    case msg of
+        Increment ->
+            model + 1
 
+        Decrement ->
+            model - 1
 
 
 view : Model -> Html Msg
-view model = div [] [
-        button [ onClick Decrement ] [ text "-"]
+view model =
+    div []
+        [ button [ onClick Decrement ] [ text "-" ]
         , text <| "Clicked " ++ String.fromInt model
-        , button [ onClick Increment ] [text "+"]
-    ]
+        , button [ onClick Increment ] [ text "+" ]
+        ]
