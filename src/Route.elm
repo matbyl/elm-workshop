@@ -1,25 +1,54 @@
 module Route exposing (..)
-import Url.Parser exposing (Parser)
-import Url.Parser as Parser
+
 import Url exposing (Url)
+import Url.Parser as Parser exposing (Parser)
 
 
-type Route = Root
+type Route
+    = Home
+    | Error
     | Pokedex
 
+
+all : List Route
+all =
+    [ Home, Error, Pokedex ]
+
+
 parser : Parser (Route -> a) a
-parser = Parser.oneOf [
-        Parser.map Root Parser.top
+parser =
+    Parser.oneOf
+        [ Parser.map Home Parser.top
         , Parser.map Pokedex (Parser.s "pokedex")
-    ]
+        ]
+
 
 fromUrl : Url -> Maybe Route
-fromUrl url = Parser.parse parser { url | path = Maybe.withDefault "" url.fragment, fragment = Nothing }
+fromUrl url =
+    Parser.parse parser { url | path = Maybe.withDefault "" url.fragment, fragment = Nothing }
+
 
 toString : Route -> String
-toString route = case route of
-    Root ->
-     "#/"
-     
-    Pokedex ->
-     "#/pokedex"
+toString route =
+    case route of
+        Home ->
+            "#/"
+
+        Error ->
+            "#/error"
+
+        Pokedex ->
+            "#/pokedex"
+
+
+show : Route -> String
+show route =
+    case route of
+        Home ->
+            "Home"
+
+        Error ->
+            "Error"
+
+        Pokedex ->
+            "Pokedex"

@@ -1,7 +1,9 @@
 module Page exposing (..)
-import Html exposing (Html)
-import Browser exposing (Document)
 
+import Browser exposing (Document)
+import Component.Navbar as Navbar
+import Html exposing (Html)
+import Route exposing (Route)
 
 
 type Page
@@ -9,11 +11,15 @@ type Page
     | Pokedex
 
 
-type alias PageView msg = { title : String, content : Html msg}
+type alias PageView msg =
+    { title : String, content : Html msg }
 
-view : Page -> PageView msg -> Document msg
-view _ { title, content } =
+
+view : Route -> PageView msg -> Document msg
+view activeRoute { title, content } =
     { title = title
-    , body = [ content ]
+    , body =
+        [ Navbar.view ((==) activeRoute) Route.all
+        , content
+        ]
     }
- 
