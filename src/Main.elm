@@ -11,7 +11,7 @@ import Page
 import Page.Blank
 import Page.Home
 import Page.Pokedex as Pokedex
-import Route exposing (Route(..))
+import Route exposing (Route(..), navigateToRoute)
 import Session exposing (CatApiKey, Session)
 import Url exposing (Url)
 
@@ -42,6 +42,8 @@ type Msg
     = Ignored
     | UrlChange Url
     | UrlRequest Browser.UrlRequest
+    | NavigateToRoute Route
+    | UpdateSearchInput String
     | GotRootMsg
     | GotPokedexMsg Pokedex.Msg
 
@@ -49,6 +51,7 @@ type Msg
 type alias Model =
     { pageModel : PageModel
     , activeRoute : Route
+    , mSearchQuery : Maybe String
     }
 
 
@@ -70,15 +73,15 @@ init flags url navKey =
     case JD.decodeValue decoder flags of
         Ok session ->
             Route.fromUrl url
-                |> Maybe.map (changeRouteTo { activeRoute = Route.Home, pageModel = Home session })
-                |> Maybe.withDefault ( { activeRoute = Route.Error, pageModel = Error defaultSession }, Cmd.none )
+                |> Maybe.map (changeRouteTo { activeRoute = Route.Home, pageModel = Home session, mSearchQuery = Nothing })
+                |> Maybe.withDefault ( { activeRoute = Route.Home, pageModel = Home session, mSearchQuery = Nothing }, Cmd.none )
 
         Err err ->
             let
                 _ =
                     Debug.log "Error: " err
             in
-            ( { activeRoute = Route.Error, pageModel = Error defaultSession }, Cmd.none )
+            ( { activeRoute = Route.Error, pageModel = Error defaultSession, mSearchQuery = Nothing }, Cmd.none )
 
 
 toSession : Model -> Session
@@ -101,7 +104,7 @@ update msg model =
             toSession model
 
         updateWith =
-            updateWithRoute model.activeRoute
+            updateWithSharedModel model
     in
     case ( msg, model.pageModel ) of
         ( Ignored, _ ) ->
@@ -115,13 +118,16 @@ update msg model =
         ( UrlRequest urlRequest, _ ) ->
             case urlRequest of
                 Browser.Internal url ->
-                    url.fragment
-                        |> Maybe.map (always ( model, Navigation.pushUrl session.navKey (Url.toString url) ))
-                        |> Maybe.withDefault ( model, Cmd.none )
+                    ( model, Navigation.pushUrl session.navKey (Url.toString url) )
 
                 Browser.External href ->
                     ( model, Navigation.load href )
 
+        ( NavigateToRoute route, _ ) ->
+            ( model, Route.navigateToRoute session.navKey route )
+
+        (UpdateSearchInput s, _ )->
+            ( { model | mSearchQuery = Just s }, Cmd.none)
         ( GotRootMsg, _ ) ->
             ( model, Cmd.none ) |> updateWith (always GotRootMsg) (always (Home session))
 
@@ -133,9 +139,9 @@ update msg model =
             ( model, Cmd.none )
 
 
-updateWithRoute : Route -> (subMsg -> Msg) -> (subModel -> PageModel) -> ( subModel, Cmd subMsg ) -> ( Model, Cmd Msg )
-updateWithRoute activeRoute toMsg toPageModel ( subModel, subCmd ) =
-    ( { activeRoute = activeRoute, pageModel = toPageModel subModel }, Cmd.map toMsg subCmd )
+updateWithSharedModel : { model | activeRoute : Route, mSearchQuery : Maybe String } -> (subMsg -> Msg) -> (subModel -> PageModel) -> ( subModel, Cmd subMsg ) -> ( Model, Cmd Msg )
+updateWithSharedModel { activeRoute, mSearchQuery } toMsg toPageModel ( subModel, subCmd ) =
+    ( { activeRoute = activeRoute, mSearchQuery = mSearchQuery, pageModel = toPageModel subModel }, Cmd.map toMsg subCmd )
 
 
 changeRouteTo : Model -> Route -> ( Model, Cmd Msg )
@@ -145,7 +151,9 @@ changeRouteTo model route =
             toSession model
 
         updateWith =
-            updateWithRoute route
+            updateWithSharedModel model
+
+        _ = Debug.log "Route: " route
     in
     case route of
         Route.Home ->
@@ -154,20 +162,28 @@ changeRouteTo model route =
         Route.Error ->
             ( model, Cmd.none ) |> updateWith (always Ignored) (always (Error session))
 
-        Route.Pokedex ->
-            Pokedex.init session |> updateWith GotPokedexMsg Pokedex
+        Route.Pokedex s ->
+            Pokedex.init session { mSearchQuery = s} |> updateWith GotPokedexMsg Pokedex
 
 
 view : Model -> Document Msg
 view model =
     let
-        viewPage toMsg config =
+        viewPage fromPageMsg pageView =
             let
                 { title, body } =
-                    Page.view model.activeRoute config
+                    Page.view
+                        { activeRoute = model.activeRoute
+                        , searchbarConfig =
+                            { onSearch = NavigateToRoute <| Route.Pokedex model.mSearchQuery
+                            , onChange = UpdateSearchInput
+                            }
+                        , searchbarModel = model.mSearchQuery
+                        , fromPageMsg = fromPageMsg
+                        } pageView
             in
             { title = title
-            , body = List.map (Html.map toMsg) body
+            , body = body
             }
     in
     case model.pageModel of

@@ -9,6 +9,6 @@ import Route
 view : PageView msg
 view = {
     title = "Home",
-    content = Html.div [] [ Html.a [ Html.Attributes.href <| Route.toString Route.Pokedex] [ Html.text "CATS ARE AMAZING" ]]
+    content = Html.div [] [ Html.a [ Html.Attributes.href <| Route.toString <| Route.Pokedex Nothing] [ Html.text "CATS ARE AMAZING" ]]
     }
     

@@ -14,12 +14,12 @@ type Msg
 
 
 type alias Model =
-    { session : Session, pokemons : WebData (Pokemon.API.Page Pokemon) }
+    { session : Session, mSearchQuery : Maybe String, pokemons : WebData (Pokemon.API.Page Pokemon) }
 
 
-init : Session -> ( Model, Cmd Msg )
-init session =
-    ( { session = session, pokemons = RemoteData.NotAsked }, Pokemon.API.getPokemons GotPokemons )
+init : Session -> { model | mSearchQuery : Maybe String } -> ( Model, Cmd Msg )
+init session { mSearchQuery } =
+    ( { session = session, mSearchQuery = mSearchQuery, pokemons = RemoteData.NotAsked }, Pokemon.API.getPokemons GotPokemons )
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -39,7 +39,20 @@ view model =
         Html.div [] <|
             case model.pokemons of
                 RemoteData.Success x ->
-                    [ viewPokemons x.results ]
+                    let
+                        searchedPokemons =
+                            model.mSearchQuery
+                                |> Maybe.map
+                                    (\needle ->
+                                        List.filter
+                                            (\(Pokemon { name }) ->
+                                                String.contains (String.toLower needle) (String.toLower name)
+                                            )
+                                            x.results
+                                    )
+                                |> Maybe.withDefault x.results
+                    in
+                    [ viewPokemons searchedPokemons ]
 
                 _ ->
                     [ Html.text "Loading..." ]
