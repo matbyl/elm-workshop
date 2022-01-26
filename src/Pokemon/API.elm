@@ -2,9 +2,10 @@ module Pokemon.API exposing (..)
 
 import Http
 import Json.Decode as JD exposing (Decoder)
-import Pokemon exposing (Pokemon)
+import Pokemon exposing (PokedexItem, Pokemon)
 import RemoteData exposing (WebData)
 import Url.Builder exposing (QueryParameter)
+import Route exposing (Route(..))
 
 
 type alias Page a =
@@ -20,13 +21,20 @@ url =
     Url.Builder.crossOrigin "https://pokeapi.co/api/v2"
 
 
-getPokemons : (WebData (Page Pokemon) -> msg) -> Cmd msg
+getPokemons : (WebData (Page PokedexItem) -> msg) -> Cmd msg
 getPokemons toMsg =
     Http.get
         { url = url [ "pokemon-species" ] [ Url.Builder.string "limit" "1000" ]
-        , expect = Http.expectJson (toMsg << RemoteData.fromResult) (pageDecoder Pokemon.decoder)
+        , expect = Http.expectJson (toMsg << RemoteData.fromResult) (pageDecoder Pokemon.decodePokedexItem)
         }
 
+getPokemon : Int -> (WebData Pokemon -> msg) -> Cmd msg
+getPokemon pokemonId toMsg =
+    Http.get
+        { url = url [ "pokemon", String.fromInt pokemonId ] [ Url.Builder.string "limit" "1000" ]
+        , expect = Http.expectJson (toMsg << RemoteData.fromResult) Pokemon.decodePokemon
+        }
+    
 
 pageDecoder : Decoder a -> Decoder (Page a)
 pageDecoder resultsDecoder =

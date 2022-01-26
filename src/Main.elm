@@ -11,6 +11,7 @@ import Page
 import Page.Blank
 import Page.Home
 import Page.Pokedex as Pokedex
+import Page.Pokemon as Pokemon
 import Route exposing (Route(..), navigateToRoute)
 import Session exposing (CatApiKey, Session)
 import Url exposing (Url)
@@ -46,6 +47,7 @@ type Msg
     | UpdateSearchInput String
     | GotRootMsg
     | GotPokedexMsg Pokedex.Msg
+    | GotPokemonMsg Pokemon.Msg
 
 
 type alias Model =
@@ -59,6 +61,7 @@ type PageModel
     = Error Session
     | Home Session
     | Pokedex Pokedex.Model
+    | Pokemon Pokemon.Model
 
 
 init : JE.Value -> Url.Url -> Navigation.Key -> ( Model, Cmd Msg )
@@ -94,6 +97,9 @@ toSession { pageModel } =
             session
 
         Pokedex { session } ->
+            session
+
+        Pokemon { session } ->
             session
 
 
@@ -134,6 +140,9 @@ update msg model =
         ( GotPokedexMsg pokedexMsg, Pokedex pokedexModel ) ->
             Pokedex.update pokedexMsg pokedexModel |> updateWith GotPokedexMsg Pokedex
 
+        ( GotPokemonMsg pokemonMsg, Pokemon pokemonModel ) ->
+            Pokemon.update pokemonMsg pokemonModel |> updateWith GotPokemonMsg Pokemon
+
         _ ->
             -- Disregard messages that arrived for the wrong page.
             ( model, Cmd.none )
@@ -151,9 +160,8 @@ changeRouteTo model route =
             toSession model
 
         updateWith =
-            updateWithSharedModel model
+            updateWithSharedModel { model | activeRoute = route }
 
-        _ = Debug.log "Route: " route
     in
     case route of
         Route.Home ->
@@ -164,6 +172,9 @@ changeRouteTo model route =
 
         Route.Pokedex s ->
             Pokedex.init session { mSearchQuery = s} |> updateWith GotPokedexMsg Pokedex
+
+        Route.Pokemon pokemonId ->
+            Pokemon.init session pokemonId |> updateWith GotPokemonMsg Pokemon
 
 
 view : Model -> Document Msg
@@ -195,6 +206,9 @@ view model =
 
         Pokedex pokedex ->
             viewPage GotPokedexMsg (Pokedex.view pokedex)
+
+        Pokemon pokemon ->
+            viewPage GotPokemonMsg (Pokemon.view pokemon)
 
 
 subscriptions : Model -> Sub Msg

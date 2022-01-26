@@ -1,20 +1,25 @@
 module Page.Pokedex exposing (..)
 
-import Html exposing (Html)
+import Css
+import Html.Styled as Html exposing (Html)
+import Html.Styled.Attributes exposing (css, href)
 import Page exposing (PageView)
-import Pokemon exposing (Pokemon(..))
+import Pokemon exposing (PokedexItem(..))
 import Pokemon.API
 import RemoteData exposing (WebData)
 import Session exposing (Session)
+import Route
+import Html.Styled.Events as Events
+import Route exposing (Route(..))
 
 
 type Msg
-    = Init
-    | GotPokemons (WebData (Pokemon.API.Page Pokemon))
+    = GotPokemons (WebData (Pokemon.API.Page PokedexItem))
+    | NavigateToPokemon Int
 
 
 type alias Model =
-    { session : Session, mSearchQuery : Maybe String, pokemons : WebData (Pokemon.API.Page Pokemon) }
+    { session : Session, mSearchQuery : Maybe String, pokemons : WebData (Pokemon.API.Page PokedexItem) }
 
 
 init : Session -> { model | mSearchQuery : Maybe String } -> ( Model, Cmd Msg )
@@ -25,11 +30,11 @@ init session { mSearchQuery } =
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
-        Init ->
-            ( model, Pokemon.API.getPokemons GotPokemons )
-
         GotPokemons pokemons ->
             ( { model | pokemons = pokemons }, Cmd.none )
+
+        NavigateToPokemon pokemonId ->
+            (model, Route.navigateToRoute model.session.navKey <| Route.Pokemon pokemonId)
 
 
 view : Model -> PageView Msg
@@ -41,16 +46,20 @@ view model =
                 RemoteData.Success x ->
                     let
                         searchedPokemons =
+                            let
+                                indexedPokemons =
+                                    List.indexedMap Tuple.pair x.results
+                            in
                             model.mSearchQuery
                                 |> Maybe.map
                                     (\needle ->
                                         List.filter
-                                            (\(Pokemon { name }) ->
+                                            (\( _, PokedexItem { name } ) ->
                                                 String.contains (String.toLower needle) (String.toLower name)
                                             )
-                                            x.results
+                                            indexedPokemons
                                     )
-                                |> Maybe.withDefault x.results
+                                |> Maybe.withDefault indexedPokemons
                     in
                     [ viewPokemons searchedPokemons ]
 
@@ -59,10 +68,32 @@ view model =
     }
 
 
-viewPokemons : List Pokemon -> Html Msg
+viewPokemons : List ( Int, PokedexItem ) -> Html Msg
 viewPokemons =
     let
-        viewPokemon (Pokemon pokemon) =
-            Html.li [] [ Html.text pokemon.name ]
+        viewPokemon ( index, PokedexItem pokemon ) =
+            let
+                pokemonId = index + 1
+            in
+            Html.li
+                [ Events.onClick <| NavigateToPokemon pokemonId
+                , css
+                    [ Css.padding2 (Css.px 10) (Css.px 15)
+                    , Css.fontSize (Css.rem 1.3)
+                    , Css.cursor Css.pointer
+                    , Css.margin2 Css.auto (Css.px 0)
+                    , Css.hover
+                        [ Css.backgroundColor <| Css.rgba 0 0 0 0.32
+                        ]
+                    ]
+                ]
+                [ Html.text <| "#" ++ String.fromInt pokemonId ++ " " ++ pokemon.name ]
     in
-    Html.ul [] << List.map viewPokemon
+    Html.ul
+        [ css
+            [ Css.listStyle Css.none
+            , Css.width (Css.px 500)
+            , Css.margin Css.auto
+            ]
+        ]
+        << List.map viewPokemon

@@ -1,5 +1,5 @@
 module Page.Blank exposing (..)
-import Html
+import Html.Styled as Html
 import Page exposing (PageView)
 
 

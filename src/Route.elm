@@ -10,11 +10,7 @@ type Route
     = Home
     | Error
     | Pokedex (Maybe String)
-
-
-all : List Route
-all =
-    [ Home, Error, Pokedex Nothing ]
+    | Pokemon Int
 
 
 parser : Parser (Route -> a) a
@@ -22,6 +18,7 @@ parser =
     Parser.oneOf
         [ Parser.map Home Parser.top
         , Parser.map Pokedex <| Parser.s "pokedex" <?> Query.string "search"
+        , Parser.map Pokemon <| Parser.s "pokemon" </> Parser.int
         ]
 
 
@@ -37,13 +34,16 @@ toString route =
             "/"
 
         Error ->
-            "error"
+            "/error"
 
         Pokedex Nothing ->
-            "pokedex"
+            "/pokedex"
 
         Pokedex (Just s) ->
-            "pokedex?search=" ++ s
+            "/pokedex?search=" ++ s
+
+        Pokemon pokemonId ->
+            "/pokemon/" ++ String.fromInt pokemonId
 
 
 show : Route -> String
@@ -57,6 +57,9 @@ show route =
 
         Pokedex _ ->
             "Pokedex"
+
+        Pokemon _ ->
+            "Pokemon"
 
 
 navigateToRoute : Browser.Navigation.Key -> Route -> Cmd msg
