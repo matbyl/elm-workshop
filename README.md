@@ -16,4 +16,4 @@ Serve the application:
 parcel serve src/index.html
 ```
 
-  * Part 1 - [Bootstrapping](../../tree/001-bootstrapping)
+  * Part 1 - [Bootstrapping](../../tree/001-bootstraping)
